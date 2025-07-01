@@ -1,0 +1,121 @@
+import 'package:flutter/material.dart';
+import 'package:table_calendar/table_calendar.dart';
+import 'package:intl/intl.dart';
+
+// 📌 Schedule 모델 클래스
+class Schedule {
+  final DateTime date;
+  final String title;
+
+  Schedule({required this.date, required this.title});
+}
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Calendar Demo',
+      theme: ThemeData(primarySwatch: Colors.teal),
+      home: const CalendarPage(),
+    );
+  }
+}
+
+class CalendarPage extends StatefulWidget {
+  const CalendarPage({super.key});
+
+  @override
+  State<CalendarPage> createState() => _CalendarPageState();
+}
+
+class _CalendarPageState extends State<CalendarPage> {
+  DateTime _focusedDay = DateTime.now();
+  DateTime _selectedDay = DateTime.now();
+
+  // 🟡 더미 일정 데이터
+  final Map<DateTime, List<Schedule>> dummySchedules = {
+    DateTime(2025, 6, 10): [
+      Schedule(date: DateTime(2025, 6, 10), title: '회의 준비'),
+      Schedule(date: DateTime(2025, 6, 10), title: '운동 가기'),
+    ],
+    DateTime(2025, 6, 11): [
+      Schedule(date: DateTime(2025, 6, 11), title: '플러터 스터디'),
+    ],
+    DateTime(2025, 6, 12): [
+      Schedule(date: DateTime(2025, 6, 12), title: '독서 모임'),
+    ],
+  };
+
+  // 🟢 날짜에 해당하는 일정 가져오기
+  List<Schedule> getSchedulesForDay(DateTime day) {
+    final key = DateTime(day.year, day.month, day.day);
+    return dummySchedules[key] ?? [];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final schedules = getSchedulesForDay(_selectedDay);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('일정 캘린더')),
+      body: Column(
+        children: [
+          TableCalendar(
+            firstDay: DateTime.utc(2020, 1, 1),
+            lastDay: DateTime.utc(2030, 12, 31),
+            focusedDay: _focusedDay,
+            selectedDayPredicate: (day) =>
+                isSameDay(day, _selectedDay),
+            onDaySelected: (selectedDay, focusedDay) {
+              setState(() {
+                _selectedDay = selectedDay;
+                _focusedDay = focusedDay;
+              });
+            },
+            calendarStyle: const CalendarStyle(
+              todayDecoration: BoxDecoration(
+                color: Colors.orange,
+                shape: BoxShape.circle,
+              ),
+              selectedDecoration: BoxDecoration(
+                color: Colors.teal,
+                shape: BoxShape.circle,
+              ),
+            ),
+            headerStyle: const HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: schedules.isEmpty
+                ? const Center(child: Text('해당 날짜에 일정이 없습니다.'))
+                : ListView.builder(
+                    itemCount: schedules.length,
+                    itemBuilder: (context, index) {
+                      final schedule = schedules[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        child: ListTile(
+                          title: Text(schedule.title),
+                          subtitle: Text(DateFormat.yMMMMd('ko_KR')
+                              .format(schedule.date)),
+                          leading: const Icon(Icons.event_note),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
